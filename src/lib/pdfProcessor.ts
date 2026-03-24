@@ -1,9 +1,8 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url
-).toString();
+// Use a CDN to load the worker. This avoids all bundler-related issues (like 404s or blank pages)
+// when deploying to Vercel, Netlify, etc.
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 export async function processPdfInBatches<T>(
   file: File,

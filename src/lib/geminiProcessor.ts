@@ -1,6 +1,17 @@
 import { GoogleGenAI, Type } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let ai: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!ai) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not set. Please configure it in your environment variables.");
+    }
+    ai = new GoogleGenAI({ apiKey });
+  }
+  return ai;
+}
 
 export interface ColumnConfig {
   name: string;
@@ -64,7 +75,8 @@ Return ONLY the JSON array.
     required.push(col.name);
   }
 
-  const response = await ai.models.generateContent({
+  const aiClient = getAI();
+  const response = await aiClient.models.generateContent({
     model: 'gemini-3.1-pro-preview',
     contents: {
       parts: [
