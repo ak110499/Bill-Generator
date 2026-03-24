@@ -96,7 +96,11 @@ export default function App() {
         }
       );
 
-      setExtractedData(allData);
+      if (allData.length === 0) {
+        setError('No data could be extracted from this document. Please check the extraction settings or try a different document.');
+      } else {
+        setExtractedData(allData);
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'An error occurred during processing.');

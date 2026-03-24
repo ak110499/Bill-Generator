@@ -63,7 +63,7 @@ export async function processPdfInBatches<T>(
         }
       } catch (err) {
         console.error(`Error processing page ${pageNum}:`, err);
-        allData[pageNum - 1] = []; // Fallback to empty array on error
+        throw err; // Throw the error so the main process can catch it and show it in the UI
       } finally {
         completed++;
         onProgress(completed, numPages);
