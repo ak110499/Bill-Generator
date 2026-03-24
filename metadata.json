@@ -1,0 +1,5 @@
+{
+  "name": "Logistics PDF to Excel Converter",
+  "description": "Convert logistics log PDFs into clean, downloadable Excel spreadsheets.",
+  "requestFramePermissions": []
+}
