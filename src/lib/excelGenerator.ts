@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { ExtractedRow } from './geminiProcessor';
+import { ExtractedRow } from './openaiProcessor';
 
 export function generateExcel(data: ExtractedRow[], filename: string = 'Extracted_Data.xlsx') {
   if (data.length === 0) return;

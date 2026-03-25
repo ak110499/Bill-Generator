@@ -1,16 +1,12 @@
-import { GoogleGenAI, Type } from '@google/genai';
+const OPENAI_BASE_URL = 'https://api.openai.com/v1';
+const DEFAULT_MODEL = 'gpt-4.1-mini';
 
-let ai: GoogleGenAI | null = null;
-
-function getAI() {
-  if (!ai) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY is not set. Please configure it in your environment variables.");
-    }
-    ai = new GoogleGenAI({ apiKey });
+function getOpenAiApiKey() {
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('VITE_OPENAI_API_KEY is not set. Please configure it in your environment variables.');
   }
-  return ai;
+  return apiKey;
 }
 
 export interface ColumnConfig {
@@ -45,6 +41,29 @@ export const DEFAULT_CONFIG: ExtractionConfig = {
 6. Ignore Footer: Ensure no data from the "Scanned with OKEN Scanner" footer is included.`
 };
 
+function buildJsonSchema(config: ExtractionConfig) {
+  const properties: Record<string, any> = {};
+  const required: string[] = [];
+
+  for (const col of config.columns) {
+    properties[col.name] = {
+      type: col.type,
+      description: col.description,
+    };
+    required.push(col.name);
+  }
+
+  return {
+    type: 'array',
+    items: {
+      type: 'object',
+      properties,
+      required,
+      additionalProperties: false,
+    },
+  };
+}
+
 export async function processPage(base64Image: string, config: ExtractionConfig = DEFAULT_CONFIG): Promise<ExtractedRow[]> {
   const columnsPrompt = config.columns
     .map(c => `- ${c.name} (${c.type}): ${c.description}`)
@@ -63,49 +82,50 @@ ${config.additionalInstructions}
 Return ONLY the JSON array.
   `;
 
-  const properties: Record<string, any> = {};
-  const required: string[] = [];
-
-  for (const col of config.columns) {
-    let type = Type.STRING;
-    if (col.type === 'number') type = Type.NUMBER;
-    else if (col.type === 'boolean') type = Type.BOOLEAN;
-
-    properties[col.name] = { type, description: col.description };
-    required.push(col.name);
-  }
-
-  const aiClient = getAI();
-  const response = await aiClient.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
-    contents: {
-      parts: [
-        {
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: base64Image,
-          },
-        },
-        { text: prompt },
-      ],
+  const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getOpenAiApiKey()}`,
     },
-    config: {
-      systemInstruction: "You are an expert data extraction assistant. Your task is to extract data from the provided image exactly as requested. You must strictly adhere to the provided JSON schema and instructions. Do not hallucinate data. If a field is missing, leave it empty or null. Be highly accurate.",
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties,
-          required,
+    body: JSON.stringify({
+      model: DEFAULT_MODEL,
+      temperature: 0,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are an expert data extraction assistant. Extract data exactly as requested. Do not hallucinate. If data is missing, return null or empty string.',
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
+          ],
+        },
+      ],
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'extracted_rows',
+          schema: buildJsonSchema(config),
+          strict: true,
         },
       },
-      temperature: 0,
-    },
+    }),
   });
 
-  const text = response.text;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`OpenAI API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  const text = data?.choices?.[0]?.message?.content;
+
   if (!text) return [];
+
   try {
     return JSON.parse(text) as ExtractedRow[];
   } catch (e) {

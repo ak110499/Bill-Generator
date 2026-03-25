@@ -6,7 +6,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, Loader2, AlertCircle, CheckCircle2, Settings, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { processPdfInBatches } from './lib/pdfProcessor';
-import { processPage, ExtractedRow, ExtractionConfig, DEFAULT_CONFIG, ColumnConfig } from './lib/geminiProcessor';
+import { processPage, ExtractedRow, ExtractionConfig, DEFAULT_CONFIG, ColumnConfig } from './lib/openaiProcessor';
 import { generateExcel } from './lib/excelGenerator';
 
 export default function App() {
