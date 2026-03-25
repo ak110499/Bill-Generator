@@ -1,20 +1,35 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Logistics PDF to Excel Converter (OpenAI)
 
-# Run and deploy your AI Studio app
+This app extracts tabular data from logistics PDFs and exports it to Excel using the ChatGPT API (OpenAI).
 
-This contains everything you need to run your app locally.
+## Run locally
 
-View your app in AI Studio: https://ai.studio/apps/336cbfed-88ca-4331-b906-65f79e9c0a23
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
+**Prerequisites:**
+- Node.js 18+
+- OpenAI API key
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+2. Create your env file:
+   ```bash
+   cp .env.example .env.local
+   ```
+3. Set `VITE_OPENAI_API_KEY` in `.env.local`.
+4. Start the dev server:
+   ```bash
+   npm run dev
+   ```
+
+## Build for production
+
+```bash
+npm run build
+npm run preview
+```
+
+## Notes on API keys
+
+- This project currently calls OpenAI directly from the browser for simplicity.
+- For production use, move OpenAI requests to a backend endpoint so your API key is not exposed client-side.
